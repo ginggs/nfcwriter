@@ -1,3 +1,14 @@
+contains(QT_CONFIG, maemo5): message(Maemo5)
+contains(MEEGO_EDITION,harmattan): message(Maemo6)
+linux-g++-maemo:!contains(MEEGO_EDITION,harmattan): {
+  MEEGO_VERSION_MAJOR     = 1
+  MEEGO_VERSION_MINOR     = 2
+  MEEGO_VERSION_PATCH     = 0
+  MEEGO_EDITION           = harmattan
+  DEFINES += MEEGO_EDITION_HARMATTAN
+  message(Maemo6-beta)
+}
+
 # Add more folders to ship with the application, here
 folder_01.source = qml/nfcwriter
 folder_01.target = qml

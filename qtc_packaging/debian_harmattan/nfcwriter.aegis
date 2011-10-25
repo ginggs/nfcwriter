@@ -1,0 +1,8 @@
+<aegis>
+	<request policy="add">
+		<credential name="GRP::metadata-users" />
+		<credential name="TrackerReadAccess" />
+		<credential name="TrackerWriteAccess" />
+		<for path="/opt/linfati.com/bin/nfcwriter" />
+	</request>
+</aegis>
