@@ -2,17 +2,27 @@ import QtQuick 1.0
 import com.nokia.meego 1.0
 
 Page {
-    id: pageRead
+    orientationLock: PageOrientation.LockPrevious
     Label {
-        id: msg
+        id: tap
         anchors.centerIn: parent
         text: qsTr("Tap")
         scale: 3
     }
+    Flickable {
+        anchors.fill: parent
+        anchors.margins: 10
+        contentHeight: msg.height
+        contentWidth: msg.width
+        Label {
+            id: msg
+            anchors.centerIn: parent
+        }
+    }
     Connections {
         target: nfc
         onNfcRead: {
-            msg.scale = 1;
+            tap.visible = false
             msg.text = nfc.get()
         }
         onNfcLost: {

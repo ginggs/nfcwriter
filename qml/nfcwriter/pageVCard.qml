@@ -3,7 +3,8 @@ import com.nokia.meego 1.0
 import QtMobility.contacts 1.1
 
 Page {
-    id: pageVCard
+    orientationLock: PageOrientation.LockPrevious
+
     ListView {
         id:  contactList
         anchors.fill: parent

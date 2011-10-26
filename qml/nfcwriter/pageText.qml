@@ -2,7 +2,8 @@ import QtQuick 1.0
 import com.nokia.meego 1.0
 
 Page {
-    id: pageText
+    orientationLock: PageOrientation.LockPrevious
+
     Column {
         anchors.centerIn: parent
         spacing: 10
