@@ -19,10 +19,4 @@ Page {
             pageStack.pop(Qt.resolvedUrl("pageRead.qml"))
         }
     }
-    tools: ToolBarLayout {
-        ToolIcon {
-            iconId: "icon-m-toolbar-back";
-            onClicked: pageStack.pop()
-        }
-    }
 }

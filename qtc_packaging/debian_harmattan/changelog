@@ -1,3 +1,8 @@
+nfcwriter (0.2.0) unstable; urgency=low
+  * Read Support
+
+ -- Rodrigo Linfati <rodrigo@linfati.cl>  Wed, 26 Oct 2011 11:33:36 +0200
+
 nfcwriter (0.1.1) unstable; urgency=low
   * Fix Aegis Manifest
 

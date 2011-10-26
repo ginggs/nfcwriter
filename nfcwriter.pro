@@ -43,11 +43,8 @@ message(.desktop: type=e -> type=d)
 # CONFIG += qt-components
 
 # The .cpp file which was generated for your project. Feel free to hack it.
-SOURCES += main.cpp \
-    ndefnfcsprecord.cpp \
-    ndefnfcmimevcardrecord.cpp \
-    ndefnfcmimeimagerecord.cpp \
-    nfcwriter.cpp
+SOURCES += ndefnfcsprecord.cpp ndefnfcmimevcardrecord.cpp ndefnfcmimeimagerecord.cpp nfcwriter.cpp main.cpp
+HEADERS += ndefnfcsprecord.h ndefnfcmimevcardrecord.h ndefnfcmimeimagerecord.h nfcwriter.h
 
 # Please do not modify the following two lines. Required for deployment.
 include(qmlapplicationviewer/qmlapplicationviewer.pri)
@@ -61,20 +58,3 @@ OTHER_FILES += \
     qtc_packaging/debian_harmattan/control \
     qtc_packaging/debian_harmattan/compat \
     qtc_packaging/debian_harmattan/changelog
-
-HEADERS += \
-    ndefnfcsprecord.h \
-    ndefnfcmimevcardrecord.h \
-    ndefnfcmimeimagerecord.h \
-    nfcwriter.h
-
-
-
-
-
-
-
-
-
-
-
