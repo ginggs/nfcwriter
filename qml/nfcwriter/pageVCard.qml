@@ -51,7 +51,6 @@ Page {
                 onCanceled: name.color = "black"
             }
         }
-        ScrollDecorator { flickableItem: contactList }
     }
     tools: ToolBarLayout {
         ToolIcon {

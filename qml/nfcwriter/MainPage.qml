@@ -5,9 +5,16 @@ Page {
     Column {
         anchors.centerIn: parent
         spacing: 10
+        Text {
+            text: qsTr("NFC Tag Writer")
+            scale: 2
+        }
         Button {
             text: qsTr("Read Tag")
-            onClicked: pageStack.push(Qt.resolvedUrl("pageRead.qml"))
+            onClicked: {
+                pageStack.push(Qt.resolvedUrl("pageRead.qml"))
+                nfc.read()
+            }
         }
         Button {
             text: qsTr("Write Text")

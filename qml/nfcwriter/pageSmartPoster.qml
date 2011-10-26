@@ -18,7 +18,7 @@ Page {
             id: uri
             text: qsTr("http://www.")
         }
-        ButtonColumn {
+        Column {
             spacing: 10
             Button {
                 text: qsTr("Write as DoAction")

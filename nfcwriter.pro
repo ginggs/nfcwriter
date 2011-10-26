@@ -44,8 +44,6 @@ message(.desktop: type=e -> type=d)
 
 # The .cpp file which was generated for your project. Feel free to hack it.
 SOURCES += main.cpp \
-    tagimagecache.cpp \
-    nfcinfo.cpp \
     ndefnfcsprecord.cpp \
     ndefnfcmimevcardrecord.cpp \
     ndefnfcmimeimagerecord.cpp \
@@ -65,12 +63,14 @@ OTHER_FILES += \
     qtc_packaging/debian_harmattan/changelog
 
 HEADERS += \
-    tagimagecache.h \
-    nfcinfo.h \
     ndefnfcsprecord.h \
     ndefnfcmimevcardrecord.h \
     ndefnfcmimeimagerecord.h \
     nfcwriter.h
+
+
+
+
 
 
 

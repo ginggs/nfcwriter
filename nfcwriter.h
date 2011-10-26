@@ -2,11 +2,14 @@
 #define NFCWRITER_H
 
 #include <QObject>
+
 #include <QString>
 #include <QUrl>
-#include <QContactManager>
 #include <QContact>
 #include <QNearFieldManager>
+
+#include <QNdefMessage>
+
 #include <QDebug>
 
 using namespace QtMobility;
@@ -20,6 +23,7 @@ signals:
     void nfcTap();
     void nfcWritten();
     void nfcLost();
+    void nfcRead();
 
 public slots:
     bool check();
@@ -28,11 +32,14 @@ public slots:
     void writeuri(QString uri);
     void writeid(QContactLocalId id);
     void writesp(QString text, QString uri, int action);
+    QString get() { return tag; }
 
 private slots:
     void targetDetected(QNearFieldTarget *target);
     void targetLost(QNearFieldTarget *target);
     void targetError(QNearFieldTarget::Error error, const QNearFieldTarget::RequestId &id);
+    void requestCompleted(QNearFieldTarget::RequestId id);
+    void ndefMessageRead(QNdefMessage msg);
     void ndefMessageWritten();
 
 private:
@@ -53,10 +60,11 @@ private:
     // SP = Text + Uri + Action
     int action;
     // Vcard
-    QContactManager mgr;
     QContact cto;
     // NFC
     QNearFieldManager nfc;
+    // TAG
+    QString tag;
 
 };
 

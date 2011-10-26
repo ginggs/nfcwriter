@@ -1,13 +1,15 @@
 #include "nfcwriter.h"
 
-#include <QNdefNfcTextRecord>
-#include <QNdefNfcUriRecord>
-#include "ndefnfcmimevcardrecord.h"
-#include "ndefnfcsprecord.h"
+#include <QContactManager>
 
 #include <QContactAvatar>
 #include <QContactGuid>
 #include <QContactTimestamp>
+
+#include <QNdefNfcTextRecord>
+#include <QNdefNfcUriRecord>
+#include "ndefnfcmimevcardrecord.h"
+#include "ndefnfcsprecord.h"
 
 nfcwriter::nfcwriter(QObject *parent) :
     QObject(parent),
@@ -15,9 +17,9 @@ nfcwriter::nfcwriter(QObject *parent) :
     text(),
     uri(),
     action(),
-    mgr(),
     cto(),
-    nfc() {
+    nfc(),
+    tag() {
     qDebug() << "nfcwriter::nfcwriter";
 
     connect(&nfc, SIGNAL(targetDetected(QNearFieldTarget*)),
@@ -68,6 +70,7 @@ void nfcwriter::writeuri(QString u) {
 void nfcwriter::writeid(QContactLocalId id) {
     qDebug() << "nfcwriter::writeid" << id;
 
+    QContactManager mgr;
     cto = mgr.contact(id);
     cto.removeDetail( new QContactDetail(cto.detail<QContactAvatar>()));
     cto.removeDetail( new QContactDetail(cto.detail<QContactGuid>()));
@@ -101,10 +104,20 @@ void nfcwriter::targetDetected(QNearFieldTarget *target) {
 
     switch (op) {
     case nfcwriter::mode_none:
-        qDebug() << "why op == nfcwriter::mode_none?";
+        qDebug() << "why op == nfcwriter::mode_none ? ";
         break;
     case nfcwriter::mode_read:
-        qDebug() << "not implemented";
+        connect(target, SIGNAL(requestCompleted(const QNearFieldTarget::RequestId)),
+                this, SLOT(requestCompleted(QNearFieldTarget::RequestId)));
+        connect(target, SIGNAL(error(QNearFieldTarget::Error,QNearFieldTarget::RequestId)),
+                this, SLOT(targetError(QNearFieldTarget::Error,QNearFieldTarget::RequestId)));
+
+        if (target->hasNdefMessage()) {
+            connect(target, SIGNAL(ndefMessageRead(QNdefMessage)),
+                    this, SLOT(ndefMessageRead(QNdefMessage)));
+            target->readNdefMessages();
+        }
+
         break;
     case nfcwriter::mode_text:
         ndef_text.setText(text);
@@ -155,7 +168,6 @@ void nfcwriter::targetDetected(QNearFieldTarget *target) {
         case 3: // RFU
             ndef_sp.setAction(NdefNfcSpRecord::RFU);
             break;
-
         }
         connect(target, SIGNAL(ndefMessagesWritten()),
                 this, SLOT(ndefMessageWritten()));
@@ -179,38 +191,94 @@ void nfcwriter::targetLost(QNearFieldTarget *target) {
 
 void nfcwriter::targetError(QNearFieldTarget::Error error, const QNearFieldTarget::RequestId &id) {
     Q_UNUSED(id);
-    QString errorString = "Unknown";
 
+    QString errorString = "Unknown";
     switch (error) {
     case QNearFieldTarget::NoError:
-        errorString = "No error has occurred.";
+        errorString = "NoError";
         break;
     case QNearFieldTarget::UnknownError:
-        errorString = "No unknown error has occurred.";
+        errorString = "UnknownError";
         break;
     case QNearFieldTarget::UnsupportedError:
-        errorString = "The requested operation is unsupported by this near field target.";
+        errorString = "UnsupportedError";
         break;
     case QNearFieldTarget::TargetOutOfRangeError:
-        errorString = "The target is no longer within range.";
+        errorString = "TargetOutOfRangeError";
         break;
     case QNearFieldTarget::NoResponseError:
-        errorString = "The target did not respond.";
+        errorString = "NoResponseError";
         break;
     case QNearFieldTarget::ChecksumMismatchError:
-        errorString = "The checksum has detected a corrupted response.";
+        errorString = "ChecksumMismatchError";
         break;
     case QNearFieldTarget::InvalidParametersError:
-        errorString = "Invalid parameters were passed to a tag type specific function.";
+        errorString = "InvalidParametersError";
         break;
     case QNearFieldTarget::NdefReadError:
-        errorString = "Failed to read NDEF messages from the target.";
+        errorString = "NdefReadError";
         break;
     case QNearFieldTarget::NdefWriteError:
-        errorString = "Failed to write NDEF messages to the target.";
+        errorString = "NdefWriteError";
         break;
     }
     qDebug() << "nfcwriter::targetError" << error << errorString;
+}
+
+void nfcwriter::requestCompleted(QNearFieldTarget::RequestId id) {
+    // qDebug() << "nfcwriter::requestCompleted";
+    Q_UNUSED(id);
+}
+
+void nfcwriter::ndefMessageRead(QtMobility::QNdefMessage msg) {
+    qDebug() << "nfcwriter::ndefMessageRead";
+    tag.clear();
+
+    tag.append("Records: " + QString("%1").arg(msg.size()) + QString('\n'));
+    tag.append("Bytes: " + QString("%1").arg(msg.toByteArray().size()) + QString('\n'));
+
+    foreach (const QNdefRecord &r, msg) {
+        if (r.isRecordType<QNdefNfcTextRecord>()) {
+            tag.append("Text: " + QNdefNfcTextRecord(r).text() + QString('\n'));
+        } else if (r.isRecordType<QNdefNfcUriRecord>()) {
+            tag.append("Uri: " + QNdefNfcUriRecord(r).uri().toString() + QString('\n'));
+        } else if (r.isRecordType<NdefNfcSpRecord>()) {
+            NdefNfcSpRecord sp(r);
+            tag.append("SmartPoster" + QString('\n'));
+            foreach (QNdefNfcTextRecord t, sp.titles()) {
+                tag.append("Text: " + t.text() + QString('\n'));
+            }
+            tag.append("Uri: " + sp.uri().toString() + QString('\n'));
+            switch (sp.action()) {
+            case NdefNfcSpRecord::DoAction:
+                tag.append("Action: DoAction" + QString('\n'));
+                break;
+            case NdefNfcSpRecord::SaveForLater:
+                tag.append("Action: SaveForLater" + QString('\n'));
+                break;
+            case NdefNfcSpRecord::OpenForEditing:
+                tag.append("Action: OpenForEditing" + QString('\n'));
+                break;
+            case NdefNfcSpRecord::RFU:
+                tag.append("Action: RFU" + QString('\n'));
+                break;
+            }
+        } else if (r.isRecordType<NdefNfcMimeVcardRecord>()) {
+            tag.append("VCard" + QString('\n'));
+            foreach (QContact c, NdefNfcMimeVcardRecord(r).contacts()) {
+                foreach (QContactDetail d, c.details()) {
+                    tag.append(d.definitionName() + ": ");
+                    foreach (QVariant dd, d.variantValues()) {
+                        tag.append(dd.toString() + ' ');
+                    }
+                    tag.append(QString('\n'));
+                }
+            }
+        } else {
+            tag.append("Unknow Record" + QString('\n'));
+        }
+    }
+    emit nfcRead();
 }
 
 void nfcwriter::ndefMessageWritten() {
