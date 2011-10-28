@@ -1,3 +1,8 @@
+nfcwriter (0.3.1) unstable; urgency=low
+  * apps.formeego.org version
+
+ -- Rodrigo Linfati <rodrigo@linfati.cl>  Fri, 28 Oct 2011 14:21:15 +0200
+
 nfcwriter (0.2.0) unstable; urgency=low
   * Read Support
 

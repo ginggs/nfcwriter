@@ -1,5 +1,5 @@
 Source: nfcwriter
-Section: user/other
+Section: user/utilities
 Priority: optional
 Maintainer: Rodrigo Linfati <rodrigo@linfati.cl>
 Build-Depends: debhelper (>= 5), libqt4-dev, libqtm-dev, applauncherd-dev, aegis-builder, pkg-config
