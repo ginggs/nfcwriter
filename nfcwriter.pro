@@ -35,9 +35,7 @@ CONFIG += mobility
 MOBILITY += contacts versit connectivity
 
 # Speed up launching on MeeGo/Harmattan when using applauncherd daemon
-# CONFIG += qdeclarative-boostable
-message(BUG ON HARMATTAN MainPage.qml ReferenceError Cant find variable)
-message(.desktop: type=e -> type=d)
+CONFIG += qdeclarative-boostable
 
 # Add dependency to Symbian components
 # CONFIG += qt-components
