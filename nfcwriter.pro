@@ -41,8 +41,8 @@ CONFIG += qdeclarative-boostable
 # CONFIG += qt-components
 
 # The .cpp file which was generated for your project. Feel free to hack it.
-SOURCES += ndefnfcsprecord.cpp ndefnfcmimevcardrecord.cpp ndefnfcmimeimagerecord.cpp nfcwriter.cpp main.cpp
-HEADERS += ndefnfcsprecord.h ndefnfcmimevcardrecord.h ndefnfcmimeimagerecord.h nfcwriter.h
+SOURCES += ndefnfcsprecord.cpp ndefnfcmimevcardrecord.cpp ndefnfcmimeimagerecord.cpp nfcwriter.cpp ndefnfcmimebtrecord.cpp main.cpp
+HEADERS += ndefnfcsprecord.h ndefnfcmimevcardrecord.h ndefnfcmimeimagerecord.h nfcwriter.h ndefnfcmimebtrecord.h
 
 # Please do not modify the following two lines. Required for deployment.
 include(qmlapplicationviewer/qmlapplicationviewer.pri)

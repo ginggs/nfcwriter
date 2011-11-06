@@ -19,20 +19,24 @@ Page {
             }
         }
         Button {
-            text: qsTr("Write Text")
+            text: qsTr("Write Text Tag")
             onClicked: pageStack.push(Qt.resolvedUrl("pageText.qml"))
         }
         Button {
-            text: qsTr("Write URI")
+            text: qsTr("Write URI Tag")
             onClicked: pageStack.push(Qt.resolvedUrl("pageURI.qml"))
         }
         Button {
-            text: qsTr("Write VCard")
+            text: qsTr("Write VCard Tag")
             onClicked: pageStack.push(Qt.resolvedUrl("pageVCard.qml"))
         }
         Button {
-            text: qsTr("Write Smart Poster")
+            text: qsTr("Write Smart Poster Tag")
             onClicked: pageStack.push(Qt.resolvedUrl("pageSmartPoster.qml"))
+        }
+        Button {
+            text: qsTr("Write Bluetooth Audio Tag")
+            onClicked: pageStack.push(Qt.resolvedUrl("pageBlueTooth.qml"))
         }
         Text {
             text: qsTr("NFC Available: ") + (nfc.check() ? qsTr("Yes") : qsTr("NO"))

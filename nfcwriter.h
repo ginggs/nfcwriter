@@ -32,9 +32,10 @@ public slots:
     void writeuri(QString uri);
     void writeid(QContactLocalId id);
     void writesp(QString text, QString uri, int action);
-    QString get() { return tag; }
+    QString get() { return text; }
     void dump();
     void burn();
+    void writebt(QString mac);
 
 private slots:
     void targetDetected(QNearFieldTarget *target);
@@ -55,7 +56,8 @@ private:
         mode_vcard,
         mode_smartposter,
         mode_dump,
-        mode_burn
+        mode_burn,
+        mode_bt
     };
     menu op;
     // Text
@@ -68,8 +70,6 @@ private:
     QContact cto;
     // NFC
     QNearFieldManager nfc;
-    // TAG
-    QString tag;
     // MSG
     QByteArray nfctag;
 };

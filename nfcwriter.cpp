@@ -10,6 +10,7 @@
 #include <QNdefNfcUriRecord>
 #include "ndefnfcmimevcardrecord.h"
 #include "ndefnfcsprecord.h"
+#include "ndefnfcmimebtrecord.h"
 
 #include <QFile>
 #include <QCoreApplication>
@@ -22,7 +23,6 @@ nfcwriter::nfcwriter(QObject *parent) :
     action(),
     cto(),
     nfc(),
-    tag(),
     nfctag() {
     qDebug() << "nfcwriter::nfcwriter";
 
@@ -125,12 +125,82 @@ void nfcwriter::burn() {
     emit nfcTap();
 }
 
+void nfcwriter::writebt(QString mac) {
+    qDebug() << "nfcwriter::writebt" << mac;
+    mac.remove(':');      
+    nfctag.clear();
+    int tmp = 0;
+
+    for (int i=0; i<mac.size(); ++i) {
+        switch (mac.at(i).toLower().toAscii() ) {
+        case '0':
+            tmp += char(0) * ( (i%2) ? 0x01 : 0x10 );
+            break;
+        case '1':
+            tmp += char(1) * ( (i%2) ? 0x01 : 0x10 );
+            break;
+        case '2':
+            tmp += char(2) * ( (i%2) ? 0x01 : 0x10 );
+            break;
+        case '3':
+            tmp += char(3) * ( (i%2) ? 0x01 : 0x10 );
+            break;
+        case '4':
+            tmp += char(4) * ( (i%2) ? 0x01 : 0x10 );
+            break;
+        case '5':
+            tmp += char(5) * ( (i%2) ? 0x01 : 0x10 );
+            break;
+        case '6':
+            tmp += char(6) * ( (i%2) ? 0x01 : 0x10 );
+            break;
+        case '7':
+            tmp += char(7) * ( (i%2) ? 0x01 : 0x10 );
+            break;
+        case '8':
+            tmp += char(8) * ( (i%2) ? 0x01 : 0x10 );
+            break;
+        case '9':
+            tmp += char(9) * ( (i%2) ? 0x01 : 0x10 );
+            break;
+        case 'a':
+            tmp += char(10) * ( (i%2) ? 0x01 : 0x10 );
+            break;
+        case 'b':
+            tmp += char(11) * ( (i%2) ? 0x01 : 0x10 );
+            break;
+        case 'c':
+            tmp += char(12) * ( (i%2) ? 0x01 : 0x10 );
+            break;
+        case 'd':
+            tmp += char(13) * ( (i%2) ? 0x01 : 0x10 );
+            break;
+        case 'e':
+            tmp += char(14) * ( (i%2) ? 0x01 : 0x10 );
+            break;
+        case 'f':
+            tmp += char(15) * ( (i%2) ? 0x01 : 0x10 );
+            break;
+        }
+
+        if (i%2) nfctag += tmp;
+        if (i%2) tmp = 0;
+    }
+    qDebug() << "NFCTAGHEX" << nfctag.toHex();
+
+    nfc.setTargetAccessModes(QNearFieldManager::NdefWriteTargetAccess);
+    nfc.startTargetDetection();
+    op = nfcwriter::mode_bt;
+    emit nfcTap();
+}
+
 void nfcwriter::targetDetected(QNearFieldTarget *target) {
     qDebug() << "nfcwriter::targetDetected" << target;
     QNdefNfcTextRecord ndef_text;
     QNdefNfcUriRecord ndef_uri;
     NdefNfcMimeVcardRecord ndef_vcard;
     NdefNfcSpRecord ndef_sp;
+    NdefNfcMimeBtRecord ndef_bt;
 
     switch (op) {
     case nfcwriter::mode_none:
@@ -227,6 +297,18 @@ void nfcwriter::targetDetected(QNearFieldTarget *target) {
                 this, SLOT(targetError(QNearFieldTarget::Error,QNearFieldTarget::RequestId)));
 
         target->writeNdefMessages(QList<QNdefMessage>() << QNdefMessage::fromByteArray(nfctag));
+
+        break;
+    case nfcwriter::mode_bt:
+        connect(target, SIGNAL(ndefMessagesWritten()),
+                this, SLOT(ndefMessageWritten()));
+
+        connect(target, SIGNAL(error(QNearFieldTarget::Error,QNearFieldTarget::RequestId)),
+                this, SLOT(targetError(QNearFieldTarget::Error,QNearFieldTarget::RequestId)));
+
+        ndef_bt.setBtmac(nfctag);
+        target->writeNdefMessages(QList<QNdefMessage>() << QNdefMessage(ndef_bt));
+
         break;
     }
 }
@@ -239,13 +321,9 @@ void nfcwriter::targetLost(QNearFieldTarget *target) {
 
     emit nfcLost();
 
-    if (QCoreApplication::arguments().contains("dump")) {
-        QCoreApplication::quit();
-    }
+    if (QCoreApplication::arguments().contains("dump")) QCoreApplication::quit();
+    if (QCoreApplication::arguments().contains("burn")) QCoreApplication::quit();
 
-    if (QCoreApplication::arguments().contains("burn")) {
-        QCoreApplication::quit();
-    }
 }
 
 void nfcwriter::targetError(QNearFieldTarget::Error error, const QNearFieldTarget::RequestId &id) {
@@ -291,50 +369,50 @@ void nfcwriter::requestCompleted(QNearFieldTarget::RequestId id) {
 
 void nfcwriter::ndefMessageRead(QtMobility::QNdefMessage msg) {
     qDebug() << "nfcwriter::ndefMessageRead";
-    tag.clear();
+    text.clear();
 
-    tag.append("Records: " + QString("%1").arg(msg.size()) + QString('\n'));
-    tag.append("Bytes: " + QString("%1").arg(msg.toByteArray().size()) + QString('\n'));
+    text.append("Records: " + QString("%1").arg(msg.size()) + QString('\n'));
+    text.append("Bytes: " + QString("%1").arg(msg.toByteArray().size()) + QString('\n'));
 
     foreach (const QNdefRecord &r, msg) {
         if (r.isRecordType<QNdefNfcTextRecord>()) {
-            tag.append("Text: " + QNdefNfcTextRecord(r).text() + QString('\n'));
+            text.append("Text: " + QNdefNfcTextRecord(r).text() + QString('\n'));
         } else if (r.isRecordType<QNdefNfcUriRecord>()) {
-            tag.append("Uri: " + QNdefNfcUriRecord(r).uri().toString() + QString('\n'));
+            text.append("Uri: " + QNdefNfcUriRecord(r).uri().toString() + QString('\n'));
         } else if (r.isRecordType<NdefNfcSpRecord>()) {
             NdefNfcSpRecord sp(r);
-            tag.append("SmartPoster" + QString('\n'));
+            text.append("SmartPoster" + QString('\n'));
             foreach (QNdefNfcTextRecord t, sp.titles()) {
-                tag.append("Text: " + t.text() + QString('\n'));
+                text.append("Text: " + t.text() + QString('\n'));
             }
-            tag.append("Uri: " + sp.uri().toString() + QString('\n'));
+            text.append("Uri: " + sp.uri().toString() + QString('\n'));
             switch (sp.action()) {
             case NdefNfcSpRecord::DoAction:
-                tag.append("Action: DoAction" + QString('\n'));
+                text.append("Action: DoAction" + QString('\n'));
                 break;
             case NdefNfcSpRecord::SaveForLater:
-                tag.append("Action: SaveForLater" + QString('\n'));
+                text.append("Action: SaveForLater" + QString('\n'));
                 break;
             case NdefNfcSpRecord::OpenForEditing:
-                tag.append("Action: OpenForEditing" + QString('\n'));
+                text.append("Action: OpenForEditing" + QString('\n'));
                 break;
             case NdefNfcSpRecord::RFU:
-                tag.append("Action: RFU" + QString('\n'));
+                text.append("Action: RFU" + QString('\n'));
                 break;
             }
         } else if (r.isRecordType<NdefNfcMimeVcardRecord>()) {
-            tag.append("VCard" + QString('\n'));
+            text.append("VCard" + QString('\n'));
             foreach (QContact c, NdefNfcMimeVcardRecord(r).contacts()) {
                 foreach (QContactDetail d, c.details()) {
-                    tag.append(d.definitionName() + ": ");
+                    text.append(d.definitionName() + ": ");
                     foreach (QVariant dd, d.variantValues()) {
-                        tag.append(dd.toString() + ' ');
+                        text.append(dd.toString() + ' ');
                     }
-                    tag.append(QString('\n'));
+                    text.append(QString('\n'));
                 }
             }
         } else {
-            tag.append("Unknow Record" + QString('\n'));
+            text.append("Unknow Record" + QString('\n'));
         }
     }
     emit nfcRead();
