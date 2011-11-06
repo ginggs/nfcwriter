@@ -11,6 +11,9 @@
 #include "ndefnfcmimevcardrecord.h"
 #include "ndefnfcsprecord.h"
 
+#include <QFile>
+#include <QCoreApplication>
+
 nfcwriter::nfcwriter(QObject *parent) :
     QObject(parent),
     op(nfcwriter::mode_none),
@@ -19,7 +22,8 @@ nfcwriter::nfcwriter(QObject *parent) :
     action(),
     cto(),
     nfc(),
-    tag() {
+    tag(),
+    nfctag() {
     qDebug() << "nfcwriter::nfcwriter";
 
     connect(&nfc, SIGNAL(targetDetected(QNearFieldTarget*)),
@@ -92,6 +96,32 @@ void nfcwriter::writesp(QString t, QString u, int a) {
     nfc.setTargetAccessModes(QNearFieldManager::NdefWriteTargetAccess);
     nfc.startTargetDetection();
     op = nfcwriter::mode_smartposter;
+    emit nfcTap();
+}
+
+void nfcwriter::dump() {
+    qDebug() << "nfcwriter::dump";
+
+    nfc.setTargetAccessModes(QNearFieldManager::NdefReadTargetAccess);
+    nfc.startTargetDetection();
+    op = nfcwriter::mode_dump;
+    emit nfcTap();
+}
+
+void nfcwriter::burn() {
+    qDebug() << "nfcwriter::burn";
+
+    QFile tmp("nfctag.bin");
+    if (tmp.open(QIODevice::ReadOnly)) {
+        nfctag = tmp.readAll();
+        qDebug() << "BINSIZE" << tmp.size();
+        qDebug() << "HEXSIZE" << nfctag.size();
+        tmp.close();
+    }
+
+    nfc.setTargetAccessModes(QNearFieldManager::NdefWriteTargetAccess);
+    nfc.startTargetDetection();
+    op = nfcwriter::mode_burn;
     emit nfcTap();
 }
 
@@ -177,6 +207,27 @@ void nfcwriter::targetDetected(QNearFieldTarget *target) {
 
         target->writeNdefMessages(QList<QNdefMessage>() << QNdefMessage(ndef_sp));
         break;
+    case nfcwriter::mode_dump:
+        connect(target, SIGNAL(requestCompleted(const QNearFieldTarget::RequestId)),
+                this, SLOT(requestCompleted(QNearFieldTarget::RequestId)));
+        connect(target, SIGNAL(error(QNearFieldTarget::Error,QNearFieldTarget::RequestId)),
+                this, SLOT(targetError(QNearFieldTarget::Error,QNearFieldTarget::RequestId)));
+
+        if (target->hasNdefMessage()) {
+            connect(target, SIGNAL(ndefMessageRead(QNdefMessage)),
+                    this, SLOT(ndefMessageDump(QNdefMessage)));
+            target->readNdefMessages();
+        }
+        break;
+    case nfcwriter::mode_burn:
+        connect(target, SIGNAL(ndefMessagesWritten()),
+                this, SLOT(ndefMessageWritten()));
+
+        connect(target, SIGNAL(error(QNearFieldTarget::Error,QNearFieldTarget::RequestId)),
+                this, SLOT(targetError(QNearFieldTarget::Error,QNearFieldTarget::RequestId)));
+
+        target->writeNdefMessages(QList<QNdefMessage>() << QNdefMessage::fromByteArray(nfctag));
+        break;
     }
 }
 
@@ -187,6 +238,14 @@ void nfcwriter::targetLost(QNearFieldTarget *target) {
     target->disconnect();
 
     emit nfcLost();
+
+    if (QCoreApplication::arguments().contains("dump")) {
+        QCoreApplication::quit();
+    }
+
+    if (QCoreApplication::arguments().contains("burn")) {
+        QCoreApplication::quit();
+    }
 }
 
 void nfcwriter::targetError(QNearFieldTarget::Error error, const QNearFieldTarget::RequestId &id) {
@@ -279,6 +338,33 @@ void nfcwriter::ndefMessageRead(QtMobility::QNdefMessage msg) {
         }
     }
     emit nfcRead();
+}
+
+void nfcwriter::ndefMessageDump(QtMobility::QNdefMessage msg) {
+    qDebug() << "nfcwriter::ndefMessageRead";
+
+    nfctag = msg.toByteArray();
+
+    QFile tmp("nfctag.bin");
+    if (tmp.open(QIODevice::WriteOnly)) {
+        qDebug() << "MSGSIZE" << msg.toByteArray().size();
+        qDebug() << "HEXSIZE" << nfctag.size();
+        qDebug() << "BINSIZE" << tmp.write(nfctag);
+        tmp.close();
+    }
+
+    foreach (const QNdefRecord &r, msg) {
+        static int i = 1;
+        tmp.setFileName("nfctag-" + QVariant(i).toString());
+        if (tmp.open(QIODevice::WriteOnly)) {
+            qDebug() << "Playload" << i
+                     << "Size" << tmp.write(r.payload())
+                     << "Type" << r.type()
+                     << "ID" << r.id();
+            tmp.close();
+        }
+        ++i;
+    }
 }
 
 void nfcwriter::ndefMessageWritten() {

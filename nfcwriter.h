@@ -33,6 +33,8 @@ public slots:
     void writeid(QContactLocalId id);
     void writesp(QString text, QString uri, int action);
     QString get() { return tag; }
+    void dump();
+    void burn();
 
 private slots:
     void targetDetected(QNearFieldTarget *target);
@@ -40,6 +42,7 @@ private slots:
     void targetError(QNearFieldTarget::Error error, const QNearFieldTarget::RequestId &id);
     void requestCompleted(QNearFieldTarget::RequestId id);
     void ndefMessageRead(QNdefMessage msg);
+    void ndefMessageDump(QNdefMessage msg);
     void ndefMessageWritten();
 
 private:
@@ -50,7 +53,9 @@ private:
         mode_text,
         mode_uri,
         mode_vcard,
-        mode_smartposter
+        mode_smartposter,
+        mode_dump,
+        mode_burn
     };
     menu op;
     // Text
@@ -65,7 +70,8 @@ private:
     QNearFieldManager nfc;
     // TAG
     QString tag;
-
+    // MSG
+    QByteArray nfctag;
 };
 
 #endif // NFCWRITER_H
