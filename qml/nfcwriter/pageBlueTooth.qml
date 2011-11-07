@@ -8,7 +8,11 @@ Page {
         id: blueList
         anchors.fill: parent
         model: BluetoothDiscoveryModel {
-            id: blueModel
+            id: blueModel            
+            onDiscoveryChanged: {
+                help.visible = discovery;
+                reset.visible = !discovery
+            }
         }
         delegate: Item {
             height: name.height * 3 * 1.5 + blueline.height
@@ -35,6 +39,20 @@ Page {
                 onCanceled: name.color = "black"
             }
         }
+    }
+    Label {
+        id: help
+        anchors.centerIn: parent
+        text: qsTr("Put your \n bluetooth device \n in discoverable \n or visible mode")
+        scale: 2
+    }
+    Button {
+        id: reset
+        anchors.bottom: parent.bottom
+        anchors.bottomMargin: 10
+        anchors.horizontalCenter: parent.horizontalCenter
+        text: qsTr("Search again")
+        onClicked: blueModel.setDiscovery(true)
     }
     tools: ToolBarLayout {
         ToolIcon {

@@ -13,7 +13,7 @@
 #include "ndefnfcmimebtrecord.h"
 
 #include <QFile>
-#include <QCoreApplication>
+#include <QDir>
 
 nfcwriter::nfcwriter(QObject *parent) :
     QObject(parent),
@@ -40,7 +40,6 @@ bool nfcwriter::check() {
     }
     return true;
 }
-
 
 void nfcwriter::read() {
     qDebug() << "nfcwriter::read";
@@ -79,7 +78,7 @@ void nfcwriter::writeid(QContactLocalId id) {
     cto.removeDetail( new QContactDetail(cto.detail<QContactAvatar>()));
     cto.removeDetail( new QContactDetail(cto.detail<QContactGuid>()));
     cto.removeDetail( new QContactDetail(cto.detail<QContactTimestamp>()));
-    qDebug() << cto.id();
+    qDebug() << "cto.id" << cto.id();
 
     nfc.setTargetAccessModes(QNearFieldManager::NdefWriteTargetAccess);
     nfc.startTargetDetection();
@@ -99,35 +98,9 @@ void nfcwriter::writesp(QString t, QString u, int a) {
     emit nfcTap();
 }
 
-void nfcwriter::dump() {
-    qDebug() << "nfcwriter::dump";
-
-    nfc.setTargetAccessModes(QNearFieldManager::NdefReadTargetAccess);
-    nfc.startTargetDetection();
-    op = nfcwriter::mode_dump;
-    emit nfcTap();
-}
-
-void nfcwriter::burn() {
-    qDebug() << "nfcwriter::burn";
-
-    QFile tmp("nfctag.bin");
-    if (tmp.open(QIODevice::ReadOnly)) {
-        nfctag = tmp.readAll();
-        qDebug() << "BINSIZE" << tmp.size();
-        qDebug() << "HEXSIZE" << nfctag.size();
-        tmp.close();
-    }
-
-    nfc.setTargetAccessModes(QNearFieldManager::NdefWriteTargetAccess);
-    nfc.startTargetDetection();
-    op = nfcwriter::mode_burn;
-    emit nfcTap();
-}
-
 void nfcwriter::writebt(QString mac) {
     qDebug() << "nfcwriter::writebt" << mac;
-    mac.remove(':');      
+    mac.remove(':');
     nfctag.clear();
     int tmp = 0;
 
@@ -186,11 +159,21 @@ void nfcwriter::writebt(QString mac) {
         if (i%2) nfctag += tmp;
         if (i%2) tmp = 0;
     }
-    qDebug() << "NFCTAGHEX" << nfctag.toHex();
+    qDebug() << "MACHEX" << nfctag.toHex();
 
     nfc.setTargetAccessModes(QNearFieldManager::NdefWriteTargetAccess);
     nfc.startTargetDetection();
     op = nfcwriter::mode_bt;
+    emit nfcTap();
+}
+
+
+void nfcwriter::clone() {
+    qDebug() << "nfcwriter::clone";
+
+    nfc.setTargetAccessModes(QNearFieldManager::NdefWriteTargetAccess);
+    nfc.startTargetDetection();
+    op = nfcwriter::mode_clone;
     emit nfcTap();
 }
 
@@ -207,8 +190,6 @@ void nfcwriter::targetDetected(QNearFieldTarget *target) {
         qDebug() << "why op == nfcwriter::mode_none ? ";
         break;
     case nfcwriter::mode_read:
-        connect(target, SIGNAL(requestCompleted(const QNearFieldTarget::RequestId)),
-                this, SLOT(requestCompleted(QNearFieldTarget::RequestId)));
         connect(target, SIGNAL(error(QNearFieldTarget::Error,QNearFieldTarget::RequestId)),
                 this, SLOT(targetError(QNearFieldTarget::Error,QNearFieldTarget::RequestId)));
 
@@ -277,28 +258,6 @@ void nfcwriter::targetDetected(QNearFieldTarget *target) {
 
         target->writeNdefMessages(QList<QNdefMessage>() << QNdefMessage(ndef_sp));
         break;
-    case nfcwriter::mode_dump:
-        connect(target, SIGNAL(requestCompleted(const QNearFieldTarget::RequestId)),
-                this, SLOT(requestCompleted(QNearFieldTarget::RequestId)));
-        connect(target, SIGNAL(error(QNearFieldTarget::Error,QNearFieldTarget::RequestId)),
-                this, SLOT(targetError(QNearFieldTarget::Error,QNearFieldTarget::RequestId)));
-
-        if (target->hasNdefMessage()) {
-            connect(target, SIGNAL(ndefMessageRead(QNdefMessage)),
-                    this, SLOT(ndefMessageDump(QNdefMessage)));
-            target->readNdefMessages();
-        }
-        break;
-    case nfcwriter::mode_burn:
-        connect(target, SIGNAL(ndefMessagesWritten()),
-                this, SLOT(ndefMessageWritten()));
-
-        connect(target, SIGNAL(error(QNearFieldTarget::Error,QNearFieldTarget::RequestId)),
-                this, SLOT(targetError(QNearFieldTarget::Error,QNearFieldTarget::RequestId)));
-
-        target->writeNdefMessages(QList<QNdefMessage>() << QNdefMessage::fromByteArray(nfctag));
-
-        break;
     case nfcwriter::mode_bt:
         connect(target, SIGNAL(ndefMessagesWritten()),
                 this, SLOT(ndefMessageWritten()));
@@ -308,6 +267,16 @@ void nfcwriter::targetDetected(QNearFieldTarget *target) {
 
         ndef_bt.setBtmac(nfctag);
         target->writeNdefMessages(QList<QNdefMessage>() << QNdefMessage(ndef_bt));
+
+        break;
+    case nfcwriter::mode_clone:
+        connect(target, SIGNAL(ndefMessagesWritten()),
+                this, SLOT(ndefMessageWritten()));
+
+        connect(target, SIGNAL(error(QNearFieldTarget::Error,QNearFieldTarget::RequestId)),
+                this, SLOT(targetError(QNearFieldTarget::Error,QNearFieldTarget::RequestId)));
+
+        target->writeNdefMessages(QList<QNdefMessage>() << QNdefMessage::fromByteArray(nfctag) );
 
         break;
     }
@@ -320,10 +289,6 @@ void nfcwriter::targetLost(QNearFieldTarget *target) {
     target->disconnect();
 
     emit nfcLost();
-
-    if (QCoreApplication::arguments().contains("dump")) QCoreApplication::quit();
-    if (QCoreApplication::arguments().contains("burn")) QCoreApplication::quit();
-
 }
 
 void nfcwriter::targetError(QNearFieldTarget::Error error, const QNearFieldTarget::RequestId &id) {
@@ -362,19 +327,32 @@ void nfcwriter::targetError(QNearFieldTarget::Error error, const QNearFieldTarge
     qDebug() << "nfcwriter::targetError" << error << errorString;
 }
 
-void nfcwriter::requestCompleted(QNearFieldTarget::RequestId id) {
-    // qDebug() << "nfcwriter::requestCompleted";
-    Q_UNUSED(id);
-}
-
 void nfcwriter::ndefMessageRead(QtMobility::QNdefMessage msg) {
     qDebug() << "nfcwriter::ndefMessageRead";
     text.clear();
+    nfctag = msg.toByteArray();
+
+    QFile tmp(QDir::tempPath() + QDir::separator() + "nfctag.bin");
+
+    if (tmp.open(QIODevice::WriteOnly)) {
+        qDebug() << "BINSIZE" << tmp.write(nfctag);
+        tmp.close();
+    }
 
     text.append("Records: " + QString("%1").arg(msg.size()) + QString('\n'));
     text.append("Bytes: " + QString("%1").arg(msg.toByteArray().size()) + QString('\n'));
 
+    int i = 1;
     foreach (const QNdefRecord &r, msg) {
+        tmp.setFileName(QDir::tempPath() + QDir::separator() + "nfctag-" + QVariant(i).toString());
+        if (tmp.open(QIODevice::WriteOnly)) {
+            qDebug() << "Record" << i
+                     << "Size" << tmp.write(r.payload())
+                     << "Type" << r.type();
+            tmp.close();
+        }
+        ++i;
+
         if (r.isRecordType<QNdefNfcTextRecord>()) {
             text.append("Text: " + QNdefNfcTextRecord(r).text() + QString('\n'));
         } else if (r.isRecordType<QNdefNfcUriRecord>()) {
@@ -416,33 +394,6 @@ void nfcwriter::ndefMessageRead(QtMobility::QNdefMessage msg) {
         }
     }
     emit nfcRead();
-}
-
-void nfcwriter::ndefMessageDump(QtMobility::QNdefMessage msg) {
-    qDebug() << "nfcwriter::ndefMessageRead";
-
-    nfctag = msg.toByteArray();
-
-    QFile tmp("nfctag.bin");
-    if (tmp.open(QIODevice::WriteOnly)) {
-        qDebug() << "MSGSIZE" << msg.toByteArray().size();
-        qDebug() << "HEXSIZE" << nfctag.size();
-        qDebug() << "BINSIZE" << tmp.write(nfctag);
-        tmp.close();
-    }
-
-    foreach (const QNdefRecord &r, msg) {
-        static int i = 1;
-        tmp.setFileName("nfctag-" + QVariant(i).toString());
-        if (tmp.open(QIODevice::WriteOnly)) {
-            qDebug() << "Playload" << i
-                     << "Size" << tmp.write(r.payload())
-                     << "Type" << r.type()
-                     << "ID" << r.id();
-            tmp.close();
-        }
-        ++i;
-    }
 }
 
 void nfcwriter::ndefMessageWritten() {

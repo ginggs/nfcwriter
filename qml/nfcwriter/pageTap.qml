@@ -6,7 +6,7 @@ Page {
 
     Label {
         anchors.centerIn: parent
-        text: qsTr("Tap")
+        text: qsTr("Tap your \n NFC TAG")
         scale: 3
     }
 }
