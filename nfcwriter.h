@@ -34,6 +34,7 @@ public slots:
     void writesp(QString text, QString uri, int action);
     void writebt(QString mac);
     void clone();
+    void cancel();
     QString get() { return text; }
 
 private slots:

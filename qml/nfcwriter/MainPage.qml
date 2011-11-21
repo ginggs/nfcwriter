@@ -8,8 +8,9 @@ Page {
         anchors.centerIn: parent
         spacing: 10
         Text {
+            anchors.horizontalCenter: parent.horizontalCenter
             text: qsTr("NFC Tag Writer")
-            scale: 2
+            scale: 3
         }
         Button {
             text: qsTr("Read Tag")
@@ -39,7 +40,13 @@ Page {
             onClicked: pageStack.push(Qt.resolvedUrl("pageBlueTooth.qml"))
         }
         Text {
+            anchors.horizontalCenter: parent.horizontalCenter
             text: qsTr("NFC Available: ") + (nfc.check() ? qsTr("Yes") : qsTr("NO"))
+            scale: 2
+        }
+        Text {
+            anchors.horizontalCenter: parent.horizontalCenter
+            text: (nfc.check() ? qsTr("") : qsTr("Enable NFC in Setting, Device, NFC"))
             scale: 2
         }
     }

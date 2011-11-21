@@ -28,6 +28,14 @@ Page {
             onClicked: pageStack.pop()
         }
         ToolButton {
+            id: cancel
+            text: qsTr("Cancel")
+            onClicked: {
+                pageStack.pop()
+                nfc.cancel()
+            }
+        }
+        ToolButton {
             id: clone
             text: qsTr("Clone it")
             visible: false
@@ -35,6 +43,7 @@ Page {
                 cloning = true;
                 clone.visible = false
                 toolbar.visible = false
+                cancel.visible = true
                 nfc.clone()
             }
         }
@@ -46,6 +55,7 @@ Page {
             msg.text = nfc.get()
             clone.visible = true
             toolbar.visible = true
+            cancel.visible = false
         }
         onNfcTap: if (cloning) tap.visible = true
         onNfcWritten: if (cloning) tap.text = qsTr("Written your \n NFC TAG")

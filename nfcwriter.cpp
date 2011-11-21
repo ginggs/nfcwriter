@@ -177,6 +177,12 @@ void nfcwriter::clone() {
     emit nfcTap();
 }
 
+void nfcwriter::cancel() {
+    qDebug() << "nfcwriter::cancel";
+    nfc.stopTargetDetection();
+    op = nfcwriter::mode_none;
+}
+
 void nfcwriter::targetDetected(QNearFieldTarget *target) {
     qDebug() << "nfcwriter::targetDetected" << target;
     QNdefNfcTextRecord ndef_text;

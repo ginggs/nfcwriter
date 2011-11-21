@@ -1,3 +1,8 @@
+nfcwriter (0.4.1) unstable; urgency=low
+  * Add Cancel action button
+
+ -- Rodrigo Linfati <rodrigo@linfati.cl>  Mon, 21 Nov 2011 22:18:33 +0100
+
 nfcwriter (0.4.0) unstable; urgency=low
   * NFC Tag Clonner, NFC Tag Bluetooth Audio
 

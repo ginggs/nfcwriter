@@ -9,4 +9,14 @@ Page {
         text: qsTr("Tap your \n NFC TAG")
         scale: 3
     }
+    tools: ToolBarLayout {
+        ToolButton {
+            text: qsTr("Cancel")
+            onClicked: {
+                nfc.cancel()
+                pageStack.pop(Qt.resolvedUrl("pageTap.qml"))
+                pageStack.pop()
+            }
+        }
+    }
 }
